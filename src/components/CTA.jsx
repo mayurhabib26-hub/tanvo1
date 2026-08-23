@@ -22,7 +22,7 @@ export default function CTA() {
 
       <div className="container-tanvo relative text-center">
         <Reveal>
-          <h2 className="mx-auto max-w-2xl text-[36px] font-extrabold leading-[1.15] tracking-tight text-ivory text-balance sm:text-[48px] lg:text-[56px]">
+          <h2 className="mx-auto max-w-2xl text-[36px] font-extrabold leading-[1.15] tracking-tight text-white text-balance sm:text-[48px] lg:text-[56px] drop-shadow-sm">
             Have an idea?
             <br />
             Let&rsquo;s build it.
@@ -30,7 +30,7 @@ export default function CTA() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <p className="mx-auto mt-6 max-w-md text-[16px] leading-relaxed text-blue-soft/70">
+          <p className="mx-auto mt-6 max-w-md text-[16px] leading-relaxed text-slate-300">
             Tell us what you&rsquo;re building, and we&rsquo;ll help turn the
             idea into a digital product.
           </p>

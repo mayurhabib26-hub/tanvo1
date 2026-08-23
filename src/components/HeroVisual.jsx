@@ -48,7 +48,7 @@ export default function HeroVisual() {
         className="absolute inset-0 rounded-[32px]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #FFE0E7 1px, transparent 1px), linear-gradient(to bottom, #FFE0E7 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
           maskImage: "radial-gradient(circle at 55% 45%, black 45%, transparent 78%)",
           WebkitMaskImage: "radial-gradient(circle at 55% 45%, black 45%, transparent 78%)",
@@ -57,25 +57,25 @@ export default function HeroVisual() {
 
       {/* soft blurred forms */}
       <motion.div
-        className="absolute left-[8%] top-[14%] h-56 w-56 rounded-full bg-blue-soft/60 blur-3xl"
-        animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.7, 0.5] }}
+        className="absolute left-[8%] top-[14%] h-56 w-56 rounded-full bg-blue-500/20 blur-3xl"
+        animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.6, 0.4] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-[10%] right-[10%] h-64 w-64 rounded-full bg-steel/20 blur-3xl"
-        animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}
+        className="absolute bottom-[10%] right-[10%] h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl"
+        animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
       {/* rotating outlined ring echoing the fold geometry */}
       <motion.svg
         viewBox="0 0 400 400"
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-0 h-full w-full pointer-events-none"
         animate={{ rotate: 360 }}
         transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
       >
-        <circle cx="200" cy="200" r="168" stroke="#BDB2FF" strokeWidth="1" fill="none" />
-        <circle cx="200" cy="200" r="120" stroke="#BDB2FF" strokeWidth="1" fill="none" strokeDasharray="2 8" />
+        <circle cx="200" cy="200" r="168" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.25" fill="none" />
+        <circle cx="200" cy="200" r="120" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.25" fill="none" strokeDasharray="2 8" />
       </motion.svg>
 
       {/* real brand mark, tilts toward the cursor */}
@@ -92,7 +92,7 @@ export default function HeroVisual() {
           className="absolute inset-[-26%] rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(58,134,255,0.45) 0%, rgba(189,178,255,0.25) 55%, transparent 75%)",
+              "radial-gradient(circle, rgba(26,107,255,0.42) 0%, rgba(147,197,253,0.25) 55%, transparent 75%)",
             x: useTransform(springX, [-0.5, 0.5], [-14, 14]),
             y: useTransform(springY, [-0.5, 0.5], [-14, 14]),
           }}

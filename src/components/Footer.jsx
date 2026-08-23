@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col justify-between gap-12 border-b border-dark-line pb-16 lg:flex-row lg:items-end">
           <div>
             <Logo variant="light" />
-            <p className="mt-6 max-w-xs text-[14.5px] leading-relaxed text-blue-soft/60">
+            <p className="mt-6 max-w-xs text-[14.5px] leading-relaxed text-slate-400">
               Products. Platforms. Possibilities.
             </p>
           </div>
@@ -20,7 +20,7 @@ export default function Footer() {
                 key={link.label}
                 href={link.href}
                 data-cursor="hover"
-                className="text-[14px] font-medium text-blue-soft/70 transition-colors duration-300 hover:text-ivory"
+                className="text-[16px] font-medium text-slate-300 transition-colors duration-300 hover:text-white"
               >
                 {link.label}
               </a>
@@ -29,9 +29,19 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col-reverse items-center justify-between gap-6 py-8 sm:flex-row">
-          <p className="text-[13px] text-blue-soft/45">
-            © 2026 Tanvo. All rights reserved.
-          </p>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("tanvo:replay-intro"))}
+              data-cursor="hover"
+              className="text-[12.5px] font-medium text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dark-line hover:border-white/20"
+            >
+              <span>↺</span> Replay Intro
+            </button>
+            <p className="text-[13px] text-slate-500">
+              © 2026 Tanvo. All rights reserved.
+            </p>
+          </div>
 
           <div className="flex items-center gap-3">
             {socialLinks.map((social) => (
@@ -42,7 +52,7 @@ export default function Footer() {
                 rel="noreferrer"
                 aria-label={social.label}
                 data-cursor="hover"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-dark-line text-blue-soft/60 transition-colors duration-300 hover:border-white/30 hover:text-ivory"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-dark-line text-slate-400 transition-colors duration-300 hover:border-white/30 hover:text-white"
               >
                 <social.icon size={13} />
               </a>

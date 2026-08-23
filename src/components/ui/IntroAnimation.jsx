@@ -1,320 +1,752 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import tanvoMark from "../../assets/tanvo-mark.png";
 
-const SESSION_KEY = "tanvo_intro_played";
-const EASE = [0.16, 1, 0.3, 1];
+const SESSION_KEY = "tanvo_intro_seen";
 
-// Metallic silver-gray + royal-blue, matching the brand reference reel —
-// no near-black tones, everything reads as polished glass/metal.
-const COLORS = [
-  { base: "#9AA1AC", light: "#F5F7F9" },
-  { base: "#7D8590", light: "#E8EBEF" },
-  { base: "#1E46D6", light: "#6FA1FF" },
-  { base: "#2F5DFF", light: "#8FC4FF" },
-];
-
-const SHAPES = [
-  { type: "sphere", clipPath: null },
-  { type: "cube", clipPath: null },
-  { type: "triangle", clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" },
-  { type: "diamond", clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" },
-  { type: "pentagon", clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)" },
-];
-
-function randomBetween(min, max) {
-  return min + Math.random() * (max - min);
+// 3D Math Utilities
+function rotateX(x, y, z, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return { x, y: y * cos - z * sin, z: y * sin + z * cos };
 }
 
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+function rotateY(x, y, z, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return { x: x * cos + z * sin, y, z: -x * sin + z * cos };
 }
 
-// Background field: shapes scattered edge-to-edge that gently drift and
-// rotate in place for the whole intro — they never travel to the center,
-// they're atmosphere, not the logo's raw material.
-function generateAmbient(count) {
-  return Array.from({ length: count }, (_, i) => {
-    const angle = randomBetween(0, Math.PI * 2);
-    const radius = randomBetween(14, 50); // % — keeps a clear zone near center
-    const depth = Math.random();
-
-    return {
-      id: i,
-      shape: pick(SHAPES),
-      color: pick(COLORS),
-      size: randomBetween(6, 14) + depth * 14,
-      blur: (1 - depth) * 3,
-      opacity: 0.35 + depth * 0.5,
-      x: Math.min(97, Math.max(3, 50 + Math.cos(angle) * radius)),
-      y: Math.min(94, Math.max(6, 50 + Math.sin(angle) * radius * 0.85)),
-      floatX: randomBetween(-10, 10),
-      floatY: randomBetween(-18, -7),
-      rotA: randomBetween(-8, 8),
-      rotB: randomBetween(-22, 22),
-      duration: randomBetween(4, 8),
-      delay: randomBetween(0, 3),
-    };
-  });
+function project3D(x, y, z, width, height, fov = 650) {
+  const distance = fov + z;
+  if (distance <= 10) return { x: 0, y: 0, scale: 0, visible: false };
+  const scale = fov / distance;
+  return {
+    x: width / 2 + x * scale,
+    y: height / 2 + y * scale,
+    scale,
+    z,
+    visible: true,
+  };
 }
 
-// Assembly layer: bright motes that spiral inward (curved via a mid-point
-// offset) and dissolve right as the solid mark crossfades in over them.
-function generateSparks(count) {
-  return Array.from({ length: count }, (_, i) => {
-    const angle = randomBetween(0, Math.PI * 2);
-    const radius = randomBetween(10, 34);
-    const curveSign = Math.random() > 0.5 ? 1 : -1;
+// Drawing Helper: Ambient 3D Geometric Objects (Chrome Spheres, Blue Gems, Pyramids, Cubes)
+function drawAmbientShape(ctx, obj, proj) {
+  const size = Math.max(2, obj.size * proj.scale);
+  const { x, y } = proj;
 
-    return {
-      id: i,
-      size: randomBetween(3, 7),
-      startX: Math.cos(angle) * radius,
-      startY: Math.sin(angle) * radius,
-      curveX: Math.cos(angle + curveSign * 0.9) * radius * 0.5,
-      curveY: Math.sin(angle + curveSign * 0.9) * radius * 0.5,
-      delay: randomBetween(0, 0.35),
-    };
-  });
-}
+  // Realistic contact drop shadow on studio floor
+  const shadowY = y + size * 1.5;
+  const shadowScale = Math.max(0.1, 1 - (shadowY - y) / 380);
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x + 4 * proj.scale, shadowY, size * 1.15 * shadowScale, size * 0.38 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(10, 17, 40, ${0.16 * shadowScale})`;
+  ctx.fill();
+  ctx.restore();
 
-function AmbientParticle({ p }) {
-  const isRound = p.shape.type === "sphere";
-  const isCube = p.shape.type === "cube";
+  ctx.save();
+  ctx.translate(x, y);
 
-  return (
-    <span
-      aria-hidden="true"
-      className="absolute"
-      style={{
-        left: `${p.x}%`,
-        top: `${p.y}%`,
-        width: p.size,
-        height: p.size,
-        marginLeft: -p.size / 2,
-        marginTop: -p.size / 2,
-        opacity: p.opacity,
-        borderRadius: isRound ? "50%" : isCube ? "22%" : 0,
-        clipPath: p.shape.clipPath ?? undefined,
-        background: isRound
-          ? `radial-gradient(circle at 32% 28%, ${p.color.light}, ${p.color.base} 70%)`
-          : `linear-gradient(135deg, ${p.color.light}, ${p.color.base})`,
-        boxShadow: `0 6px 14px rgba(11,15,25,0.16)`,
-        filter: `blur(${p.blur}px)`,
-        animationName: "intro-float",
-        animationDuration: `${p.duration}s`,
-        animationDelay: `${p.delay}s`,
-        animationTimingFunction: "ease-in-out",
-        animationIterationCount: "infinite",
-        "--float-x": `${p.floatX}px`,
-        "--float-y": `${p.floatY}px`,
-        "--rot-a": `${p.rotA}deg`,
-        "--rot-b": `${p.rotB}deg`,
-      }}
-    />
-  );
-}
+  if (obj.type === "sphere_chrome") {
+    // Hyper-realistic Chrome Sphere with specular highlight
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
 
-function Spark({ s, duration }) {
-  return (
-    <motion.span
-      aria-hidden="true"
-      className="absolute left-1/2 top-1/2 rounded-full"
-      style={{
-        width: s.size,
-        height: s.size,
-        marginLeft: -s.size / 2,
-        marginTop: -s.size / 2,
-        background: "radial-gradient(circle, #EAF4FF 0%, #4C86FF 60%, transparent 75%)",
-        boxShadow: "0 0 6px rgba(59,130,246,0.85), 0 0 2px rgba(255,255,255,0.9)",
-      }}
-      initial={{ x: `${s.startX}vw`, y: `${s.startY}vh`, opacity: 0, scale: 0.5 }}
-      animate={{
-        x: [`${s.startX}vw`, `${s.curveX}vw`, "0vw"],
-        y: [`${s.startY}vh`, `${s.curveY}vh`, "0vh"],
-        opacity: [0, 1, 0.9, 0],
-        scale: [0.5, 1, 0.6, 0.2],
-      }}
-      transition={{ duration, delay: s.delay, ease: EASE, times: [0, 0.55, 0.85, 1] }}
-    />
-  );
-}
+    const grad = ctx.createRadialGradient(-size * 0.35, -size * 0.35, size * 0.08, 0, 0, size);
+    grad.addColorStop(0, "#FFFFFF");
+    grad.addColorStop(0.18, "#E6ECF5");
+    grad.addColorStop(0.48, "#9BA4B5");
+    grad.addColorStop(0.85, "#434D5E");
+    grad.addColorStop(1, "#181E29");
+    ctx.fillStyle = grad;
+    ctx.fill();
 
-function SparkleAccent({ delay }) {
-  const x = useMemo(() => randomBetween(10, 90), []);
-  const y = useMemo(() => randomBetween(15, 85), []);
+    // Specular glare glint
+    ctx.beginPath();
+    ctx.arc(-size * 0.38, -size * 0.38, size * 0.22, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fill();
+  } else if (obj.type === "gem_blue") {
+    // Vibrant Cobalt/Royal Blue Faceted Gemstone (Octahedron / Prism)
+    ctx.rotate(obj.rotZ);
 
-  return (
-    <motion.span
-      aria-hidden="true"
-      className="absolute h-3 w-3 sm:h-4 sm:w-4"
-      style={{
-        left: `${x}%`,
-        top: `${y}%`,
-        background: "linear-gradient(135deg, #ffffff, #6FA1FF)",
-        clipPath:
-          "polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%)",
-      }}
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: [0, 1, 0], scale: [0, 1, 0.7] }}
-      transition={{ duration: 1.1, delay, ease: EASE }}
-    />
-  );
-}
+    // Facet 1: Top Right
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.1);
+    ctx.lineTo(size * 0.9, 0);
+    ctx.lineTo(0, size * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = "#38BDF8";
+    ctx.fill();
 
-export default function IntroAnimation() {
-  const [shouldRender, setShouldRender] = useState(() => {
-    try {
-      return sessionStorage.getItem(SESSION_KEY) !== "true";
-    } catch {
-      return true;
-    }
-  });
-  const [exiting, setExiting] = useState(false);
-  const finishedRef = useRef(false);
+    // Facet 2: Top Left (Highlight)
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.1);
+    ctx.lineTo(-size * 0.9, 0);
+    ctx.lineTo(0, size * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = "#60A5FA";
+    ctx.fill();
 
-  const prefersReducedMotion = useMemo(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    []
-  );
-  const isMobile = useMemo(
-    () => typeof window !== "undefined" && window.innerWidth < 768,
-    []
-  );
+    // Facet 3: Bottom Right
+    ctx.beginPath();
+    ctx.moveTo(0, size * 1.1);
+    ctx.lineTo(size * 0.9, 0);
+    ctx.lineTo(0, size * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = "#1D4ED8";
+    ctx.fill();
 
-  const ambientCount = prefersReducedMotion ? 0 : isMobile ? 28 : 70;
-  const sparkCount = prefersReducedMotion ? 0 : isMobile ? 10 : 26;
-  const accentCount = prefersReducedMotion ? 0 : isMobile ? 2 : 3;
+    // Facet 4: Bottom Left (Deep Shadow)
+    ctx.beginPath();
+    ctx.moveTo(0, size * 1.1);
+    ctx.lineTo(-size * 0.9, 0);
+    ctx.lineTo(0, size * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = "#1E3A8A";
+    ctx.fill();
 
-  const ambient = useMemo(
-    () => (ambientCount > 0 ? generateAmbient(ambientCount) : []),
-    [ambientCount]
-  );
-  const sparks = useMemo(
-    () => (sparkCount > 0 ? generateSparks(sparkCount) : []),
-    [sparkCount]
-  );
+    // Sharp Facet Edges
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+  } else if (obj.type === "pyramid_dark") {
+    // Anthracite/Graphite Dark Metallic Pyramid
+    ctx.rotate(obj.rotY);
 
-  const SPARK_DURATION = 1.3;
-  const MARK_DELAY = prefersReducedMotion ? 0.1 : 1.45;
-  const MARK_DURATION = prefersReducedMotion ? 0.35 : 0.55;
-  const GLOW_DELAY = Math.max(0, MARK_DELAY - 0.15);
-  const WORD_DELAY = MARK_DELAY + (prefersReducedMotion ? 0.3 : 0.45);
-  const WORD_DURATION = prefersReducedMotion ? 0.25 : 0.4;
-  const TAG_DELAY = WORD_DELAY + (prefersReducedMotion ? 0.2 : 0.35);
-  const TAG_DURATION = prefersReducedMotion ? 0.25 : 0.4;
-  const HOLD = prefersReducedMotion ? 0.35 : 0.4;
-  const EXIT_DURATION = prefersReducedMotion ? 0.4 : 0.7;
-  const exitAtMs = (TAG_DELAY + TAG_DURATION + HOLD) * 1000;
+    // Left face
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.1);
+    ctx.lineTo(-size * 0.9, size * 0.8);
+    ctx.lineTo(size * 0.2, size * 0.9);
+    ctx.closePath();
+    ctx.fillStyle = "#181E2B";
+    ctx.fill();
 
-  function finish() {
-    if (finishedRef.current) return;
-    finishedRef.current = true;
-    try {
-      sessionStorage.setItem(SESSION_KEY, "true");
-    } catch {
-      // sessionStorage unavailable (private mode etc.) — animation still
-      // completes, it just may replay on next load.
-    }
-    setShouldRender(false);
+    // Right face (lit)
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.1);
+    ctx.lineTo(size * 0.9, size * 0.7);
+    ctx.lineTo(size * 0.2, size * 0.9);
+    ctx.closePath();
+    ctx.fillStyle = "#475569";
+    ctx.fill();
+
+    // Edge sheen
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  } else {
+    // 3D Cube / Polyhedral Gem Shard
+    ctx.rotate(obj.rotX + obj.rotZ);
+    const s = size * 0.75;
+
+    // Top face
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.lineTo(s, -s * 0.5);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(-s, -s * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = "#2563EB";
+    ctx.fill();
+
+    // Left face
+    ctx.beginPath();
+    ctx.moveTo(-s, -s * 0.5);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(0, s);
+    ctx.lineTo(-s, s * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = "#1D4ED8";
+    ctx.fill();
+
+    // Right face
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(s, -s * 0.5);
+    ctx.lineTo(s, s * 0.5);
+    ctx.lineTo(0, s);
+    ctx.closePath();
+    ctx.fillStyle = "#1E40AF";
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
   }
 
-  useEffect(() => {
-    if (!shouldRender) return;
+  ctx.restore();
+}
 
-    // A class (not inline style) so this can't be clobbered by Navbar's own
-    // body.style.overflow toggle for its mobile menu.
-    document.body.classList.add("overflow-hidden");
+// Drawing Helper: Swarm Convergence Particles (Exact Logo Points)
+function drawSwarmParticle(ctx, lp, proj, alpha) {
+  const size = Math.max(1.8, lp.size * proj.scale);
+  ctx.save();
+  ctx.globalAlpha = alpha;
 
-    const exitTimer = setTimeout(() => setExiting(true), exitAtMs);
-    // Hard safety net: force the overlay away even if the exit animation's
-    // onAnimationComplete never fires, so it can never block the site.
-    const fallbackTimer = setTimeout(finish, exitAtMs + EXIT_DURATION * 1000 + 1500);
+  ctx.beginPath();
+  ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+  ctx.fillStyle = lp.color;
+  ctx.shadowColor = lp.color;
+  ctx.shadowBlur = 10 * proj.scale;
+  ctx.fill();
 
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-      clearTimeout(exitTimer);
-      clearTimeout(fallbackTimer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRender]);
+  // White specular micro-dot in center
+  ctx.beginPath();
+  ctx.arc(proj.x, proj.y, size * 0.4, 0, Math.PI * 2);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fill();
 
-  if (!shouldRender) return null;
+  ctx.restore();
+}
 
+// Sparkle Star Component
+function SparkleStar({ x, y, size = 16, delay = 0, duration = 2.4, color = "#4D96FF" }) {
   return (
     <motion.div
       aria-hidden="true"
-      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
-      style={{
-        perspective: 1000,
-        backgroundImage:
-          "radial-gradient(circle at 50% 45%, #F0F9FF 0%, #E0F2FE 100%)",
+      className="pointer-events-none absolute"
+      style={{ left: `${x}%`, top: `${y}%`, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2 }}
+      initial={{ opacity: 0, scale: 0, rotate: 0 }}
+      animate={{
+        opacity: [0, 0.95, 1, 0.7, 0],
+        scale: [0, 1.2, 1, 0.9, 0],
+        rotate: [0, 45, 90, 135, 180],
       }}
-      animate={exiting ? { opacity: 0, scale: 1.06 } : { opacity: 1, scale: 1 }}
-      transition={{ duration: EXIT_DURATION, ease: EASE }}
-      onAnimationComplete={() => {
-        if (exiting) finish();
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        repeatDelay: 1.2,
+        ease: "easeInOut",
       }}
     >
+      <svg viewBox="0 0 24 24" className="w-full h-full drop-shadow-[0_0_8px_rgba(26,107,255,0.8)]">
+        <path
+          d="M12 0 Q12 12 24 12 Q12 12 12 24 Q12 12 0 12 Q12 12 12 0 Z"
+          fill="#FFFFFF"
+        />
+        <circle cx="12" cy="12" r="3" fill={color} />
+      </svg>
+    </motion.div>
+  );
+}
+
+// Generates a crisp, bold, geometric 3D "T" shape
+function generateTanvoTParticles(totalCount) {
+  const particles = [];
+  const barRatio = 0.44; // 44% in horizontal crossbar, 56% in vertical stem
+
+  for (let i = 0; i < totalCount; i++) {
+    let tx = 0;
+    let ty = 0;
+    let color = "#2563EB";
+    const rand = Math.random();
+
+    if (rand < barRatio) {
+      // 1. Top Crossbar of 'T' (Smooth, crisp, perfectly centered horizontal bar)
+      // x from -68 to +68
+      const u = Math.random();
+      tx = -68 + u * 136;
+      // y from -54 to -28
+      ty = -54 + Math.random() * 26;
+
+      // Color gradient: Cyan on left -> Sapphire Blue on right
+      if (u < 0.35) color = "#38BDF8";
+      else if (u < 0.7) color = "#2563EB";
+      else color = "#1D4ED8";
+    } else {
+      // 2. Vertical Stem of 'T' (Crisp, centered vertical column)
+      const v = Math.random();
+      // x centered from -14 to +14
+      tx = (Math.random() - 0.5) * 28;
+      // y from -28 to +64
+      ty = -28 + v * 92;
+
+      // Color gradient: Blue down to Deep Royal Blue
+      if (v < 0.4) color = "#2563EB";
+      else if (v < 0.75) color = "#1D4ED8";
+      else color = "#1E40AF";
+    }
+
+    // Initial outer radial dispersed positions for smooth convergence
+    const startAngle = Math.random() * Math.PI * 2;
+    const startDist = 300 + Math.random() * 360;
+
+    particles.push({
+      x: Math.cos(startAngle) * startDist,
+      y: Math.sin(startAngle) * startDist,
+      z: (Math.random() - 0.5) * 200,
+      targetX: tx,
+      targetY: ty,
+      targetZ: (Math.random() - 0.5) * 16,
+      currentX: Math.cos(startAngle) * startDist,
+      currentY: Math.sin(startAngle) * startDist,
+      currentZ: (Math.random() - 0.5) * 200,
+      size: 2.2 + Math.random() * 2.4,
+      color,
+      delay: 0.15 + Math.random() * 0.65,
+    });
+  }
+
+  return particles;
+}
+
+export default function IntroAnimation() {
+  const canvasRef = useRef(null);
+  const [active, setActive] = useState(true);
+  const [exiting, setExiting] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
+  const [showWordmark, setShowWordmark] = useState(false);
+  const [showTagline, setShowTagline] = useState(false);
+  const [burstFlash, setBurstFlash] = useState(false);
+
+  const animFrameRef = useRef(null);
+  const startTimeRef = useRef(0);
+  const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+
+  const finish = useCallback(() => {
+    try {
+      sessionStorage.setItem(SESSION_KEY, "true");
+    } catch {
+      // ignore
+    }
+    setActive(false);
+  }, []);
+
+  const handleSkip = useCallback(() => {
+    setExiting(true);
+    setTimeout(finish, 400);
+  }, [finish]);
+
+  // Listen for replay requests
+  useEffect(() => {
+    const handleReplay = () => {
+      setActive(true);
+      setExiting(false);
+      setShowLogo(false);
+      setShowWordmark(false);
+      setShowTagline(false);
+      setBurstFlash(false);
+      startTimeRef.current = performance.now();
+    };
+
+    window.addEventListener("tanvo:replay-intro", handleReplay);
+    return () => window.removeEventListener("tanvo:replay-intro", handleReplay);
+  }, []);
+
+  // Parallax mouse move
+  useEffect(() => {
+    if (!active) return;
+    const onMouseMove = (e) => {
+      const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+      const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+      mouseRef.current.targetX = nx * 0.35;
+      mouseRef.current.targetY = ny * 0.35;
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    return () => window.removeEventListener("mousemove", onMouseMove);
+  }, [active]);
+
+  // Sequence timelines
+  useEffect(() => {
+    if (!active) return;
+
+    document.body.style.overflow = "hidden";
+
+    const t1 = setTimeout(() => setShowLogo(true), 2800);
+    const t2 = setTimeout(() => setBurstFlash(true), 2800);
+    const t3 = setTimeout(() => setShowWordmark(true), 3200);
+    const t4 = setTimeout(() => setShowTagline(true), 3500);
+    const t5 = setTimeout(() => setExiting(true), 5400);
+    const t6 = setTimeout(() => finish(), 6100);
+
+    return () => {
+      document.body.style.overflow = "";
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
+      clearTimeout(t6);
+    };
+  }, [active, finish]);
+
+  // Main 3D Canvas Animation Engine
+  useEffect(() => {
+    if (!active) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    // 1. Ambient 3D floating shapes
+    const ambientObjects = [];
+    const NUM_AMBIENT = window.innerWidth < 768 ? 44 : 80;
+
+    for (let i = 0; i < NUM_AMBIENT; i++) {
+      const typeChoice = Math.random();
+      let type = "sphere_chrome";
+      if (typeChoice < 0.32) type = "sphere_chrome";
+      else if (typeChoice < 0.58) type = "gem_blue";
+      else if (typeChoice < 0.78) type = "pyramid_dark";
+      else type = "cube_gem";
+
+      const spreadRadius = 250 + Math.random() * 520;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = (Math.random() - 0.5) * Math.PI * 0.8;
+
+      ambientObjects.push({
+        id: i,
+        type,
+        x: Math.cos(theta) * Math.cos(phi) * spreadRadius,
+        y: Math.sin(phi) * spreadRadius * 0.75,
+        z: Math.sin(theta) * Math.cos(phi) * spreadRadius,
+        originX: Math.cos(theta) * Math.cos(phi) * spreadRadius,
+        originY: Math.sin(phi) * spreadRadius * 0.75,
+        originZ: Math.sin(theta) * Math.cos(phi) * spreadRadius,
+        size: 5 + Math.random() * 18,
+        rotX: Math.random() * Math.PI * 2,
+        rotY: Math.random() * Math.PI * 2,
+        rotZ: Math.random() * Math.PI * 2,
+        rotSpeedX: (Math.random() - 0.5) * 0.025,
+        rotSpeedY: (Math.random() - 0.5) * 0.025,
+        rotSpeedZ: (Math.random() - 0.5) * 0.025,
+        driftSpeed: 0.8 + Math.random() * 1.5,
+        driftPhase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    // 2. Pure 'T' Convergence Particles
+    const NUM_SWARM = window.innerWidth < 768 ? 260 : 420;
+    const logoTargets = generateTanvoTParticles(NUM_SWARM);
+
+    startTimeRef.current = performance.now();
+
+    // 3D Render Loop
+    const render = (time) => {
+      const elapsed = (time - startTimeRef.current) / 1000;
+
+      mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.08;
+      mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.08;
+
+      const camRotY = mouseRef.current.x * 0.35;
+      const camRotX = -mouseRef.current.y * 0.35;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Studio Vignette Background (Dark Midnight Obsidian)
+      const bgGrad = ctx.createRadialGradient(
+        width / 2,
+        height * 0.45,
+        50,
+        width / 2,
+        height / 2,
+        Math.max(width, height) * 0.75
+      );
+      bgGrad.addColorStop(0, "#0D1527");
+      bgGrad.addColorStop(0.5, "#080D1A");
+      bgGrad.addColorStop(1, "#03050B");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Center Ambient Floor Shadow / Glow
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(width / 2, height * 0.58, 240, 52, 0, 0, Math.PI * 2);
+      const floorGlow = ctx.createRadialGradient(
+        width / 2,
+        height * 0.58,
+        10,
+        width / 2,
+        height * 0.58,
+        240
+      );
+      floorGlow.addColorStop(0, "rgba(26, 107, 255, 0.18)");
+      floorGlow.addColorStop(0.5, "rgba(26, 107, 255, 0.05)");
+      floorGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = floorGlow;
+      ctx.fill();
+      ctx.restore();
+
+      const renderQueue = [];
+
+      // Ambient 3D Shapes
+      const isBursting = elapsed > 2.8;
+      const burstFactor = Math.min(1, Math.max(0, (elapsed - 2.8) / 0.8));
+
+      ambientObjects.forEach((obj) => {
+        const floatY = Math.sin(elapsed * obj.driftSpeed + obj.driftPhase) * 16;
+        const floatX = Math.cos(elapsed * obj.driftSpeed * 0.7 + obj.driftPhase) * 12;
+
+        let curX = obj.originX + floatX;
+        let curY = obj.originY + floatY;
+        let curZ = obj.originZ;
+
+        if (isBursting) {
+          const angle = Math.atan2(curY, curX);
+          const dist = Math.sqrt(curX * curX + curY * curY) || 1;
+          const burstDist = Math.sin(burstFactor * Math.PI * 0.5) * (180 + (400 / dist) * 90);
+          curX += Math.cos(angle) * burstDist;
+          curY += Math.sin(angle) * burstDist;
+          curZ += Math.sin(burstFactor * Math.PI) * 100;
+        }
+
+        let p = rotateY(curX, curY, curZ, camRotY);
+        p = rotateX(p.x, p.y, p.z, camRotX);
+
+        const proj = project3D(p.x, p.y, p.z, width, height);
+
+        if (proj.visible) {
+          obj.rotX += obj.rotSpeedX;
+          obj.rotY += obj.rotSpeedY;
+          obj.rotZ += obj.rotSpeedZ;
+
+          renderQueue.push({
+            type: "ambient",
+            item: obj,
+            proj,
+            z: p.z,
+          });
+        }
+      });
+
+      // Logo Convergence Particles for the 'T' Shape (Active only until Logo appears at 2.8s)
+      if (elapsed > 0.15 && elapsed < 2.8) {
+        let convergeAlpha = 1;
+        if (elapsed < 1.0) {
+          convergeAlpha = Math.min(1, (elapsed - 0.15) / 0.7);
+        } else if (elapsed > 2.5) {
+          // Dissolve smoothly right before the logo reveal flash
+          convergeAlpha = Math.max(0, 1 - (elapsed - 2.5) / 0.3);
+        }
+
+        const isDispersing = elapsed > 2.5;
+        const disperseFactor = isDispersing ? (elapsed - 2.5) / 0.3 : 0;
+
+        logoTargets.forEach((lp) => {
+          if (elapsed > lp.delay) {
+            const t = Math.min(1, (elapsed - lp.delay) / 1.3);
+            const ease = 1 - Math.pow(1 - t, 3); // Cubic ease out
+
+            let curX = lp.x + (lp.targetX - lp.x) * ease;
+            let curY = lp.y + (lp.targetY - lp.y) * ease;
+            let curZ = lp.z + (lp.targetZ - lp.z) * ease;
+
+            if (isDispersing) {
+              const angle = Math.atan2(curY, curX);
+              const push = disperseFactor * 60;
+              curX += Math.cos(angle) * push;
+              curY += Math.sin(angle) * push;
+              curZ += (Math.random() - 0.5) * 30 * disperseFactor;
+            }
+
+            let p = rotateY(curX, curY, curZ, camRotY);
+            p = rotateX(p.x, p.y, p.z, camRotX);
+
+            const proj = project3D(p.x, p.y, p.z, width, height);
+            if (proj.visible && convergeAlpha > 0) {
+              renderQueue.push({
+                type: "swarm_particle",
+                item: lp,
+                proj,
+                alpha: convergeAlpha,
+                z: p.z,
+              });
+            }
+          }
+        });
+      }
+
+      // Depth sort
+      renderQueue.sort((a, b) => b.z - a.z);
+
+      renderQueue.forEach((entry) => {
+        if (entry.type === "ambient") {
+          drawAmbientShape(ctx, entry.item, entry.proj);
+        } else if (entry.type === "swarm_particle") {
+          drawSwarmParticle(ctx, entry.item, entry.proj, entry.alpha);
+        }
+      });
+
+      animFrameRef.current = requestAnimationFrame(render);
+    };
+
+    animFrameRef.current = requestAnimationFrame(render);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [active]);
+
+  if (!active) return null;
+
+  return (
+    <AnimatePresence>
       <motion.div
         aria-hidden="true"
-        className="absolute h-[46vh] w-[46vh] rounded-full bg-[#1E46D6]/40 blur-3xl"
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: [0, 0.8, 0.55], scale: [0.7, 1.15, 1] }}
-        transition={{ duration: 1, delay: GLOW_DELAY, ease: EASE }}
-      />
+        className="fixed inset-0 z-[99999] flex flex-col items-center justify-center select-none overflow-hidden"
+        initial={{ opacity: 1 }}
+        animate={exiting ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {/* Fullscreen 3D Canvas */}
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full pointer-events-none" />
 
-      {ambient.length > 0 && (
-        <motion.div
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-        >
-          {ambient.map((p) => (
-            <AmbientParticle key={p.id} p={p} />
-          ))}
-        </motion.div>
-      )}
+        {/* Shockwave Flash Flare on Logo Lock-in */}
+        <AnimatePresence>
+          {burstFlash && (
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: "radial-gradient(circle at center, rgba(26,107,255,0.45) 0%, rgba(255,255,255,0.85) 25%, transparent 70%)",
+              }}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: [0, 0.85, 0], scale: [0.6, 1.3, 1.8] }}
+              transition={{ duration: 0.9, ease: "easeOut" }}
+            />
+          )}
+        </AnimatePresence>
 
-      {sparks.map((s) => (
-        <Spark key={s.id} s={s} duration={SPARK_DURATION} />
-      ))}
+        {/* Corner Sparkle Star Flares */}
+        <SparkleStar x={85} y={82} size={24} delay={0.2} duration={2.6} />
+        <SparkleStar x={18} y={28} size={18} delay={0.8} duration={2.2} />
+        <SparkleStar x={78} y={22} size={16} delay={1.4} duration={2.5} />
+        <SparkleStar x={25} y={75} size={20} delay={1.9} duration={2.4} />
 
-      {Array.from({ length: accentCount }, (_, i) => (
-        <SparkleAccent key={i} delay={GLOW_DELAY + 0.4 + i * 0.3} />
-      ))}
+        {/* Central 3D Brand Emblem & Typography */}
+        <div className="relative z-20 flex flex-col items-center justify-center text-center px-6">
+          {/* Logo 3D Mark Container */}
+          <div className="relative flex items-center justify-center mb-5">
+            <AnimatePresence>
+              {showLogo && (
+                <>
+                  {/* Subtle Ambient Radial Glow */}
+                  <motion.div
+                    className="absolute -inset-10 rounded-full blur-2xl"
+                    style={{
+                      background: "radial-gradient(circle, rgba(26,107,255,0.35) 0%, rgba(147,197,253,0.2) 60%, transparent 80%)",
+                    }}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: [0.9, 1.1, 1] }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                  />
 
-      <div className="relative z-10 flex flex-col items-center text-center">
-        <motion.img
-          src={tanvoMark}
-          alt="Tanvo"
-          className="h-24 w-24 object-contain sm:h-28 sm:w-28"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: MARK_DURATION, delay: MARK_DELAY, ease: EASE }}
-        />
+                  {/* 3D Tanvo "T" Emblem */}
+                  <motion.div
+                    className="relative"
+                    initial={{ opacity: 0, scale: 0.65, y: 15, rotateX: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <img
+                      src={tanvoMark}
+                      alt="Tanvo T Logo"
+                      className="h-28 w-28 sm:h-36 sm:w-36 object-contain drop-shadow-[0_20px_40px_rgba(10,17,40,0.15)]"
+                    />
 
-        <motion.span
-          className="mt-4 text-[40px] font-extrabold tracking-tight text-[#0B0F19] sm:text-[52px]"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: WORD_DURATION, delay: WORD_DELAY, ease: EASE }}
-        >
-          Tanvo
-        </motion.span>
+                    {/* Dynamic Specular Sweep on the Mark */}
+                    <div
+                      className="pointer-events-none absolute inset-0 overflow-hidden"
+                      style={{
+                        maskImage: `url(${tanvoMark})`,
+                        WebkitMaskImage: `url(${tanvoMark})`,
+                        maskSize: "contain",
+                        WebkitMaskSize: "contain",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskPosition: "center",
+                      }}
+                    >
+                      <motion.div
+                        className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/90 to-transparent"
+                        style={{ mixBlendMode: "overlay" }}
+                        initial={{ x: "-120%" }}
+                        animate={{ x: "250%" }}
+                        transition={{ duration: 1.2, delay: 0.1, ease: "easeInOut" }}
+                      />
+                    </div>
 
-        <motion.span
-          className="mt-2 text-[15px] font-medium tracking-wide text-[#55617A] sm:text-[17px]"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: TAG_DURATION, delay: TAG_DELAY, ease: EASE }}
-        >
-          Products. Platforms. Possibilities.
-        </motion.span>
-      </div>
-    </motion.div>
+                    {/* Sparkle Glint on the Emblem's Apex */}
+                    <SparkleStar x={72} y={14} size={22} delay={0.3} duration={2.0} color="#FFFFFF" />
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Typography: "Tanvo" Wordmark */}
+          <div className="overflow-hidden min-h-[48px] sm:min-h-[60px] flex items-center justify-center">
+            <AnimatePresence>
+              {showWordmark && (
+                <motion.h1
+                  className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-[0_0_20px_rgba(26,107,255,0.4)]"
+                  initial={{ opacity: 0, y: 22, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Tanvo
+                </motion.h1>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Tagline: "Products. Platforms. Possibilities." */}
+          <div className="overflow-hidden min-h-[28px] sm:min-h-[34px] flex items-center justify-center mt-1">
+            <AnimatePresence>
+              {showTagline && (
+                <motion.p
+                  className="text-[14px] sm:text-[16px] font-medium tracking-wide text-slate-300"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Products. Platforms. Possibilities.
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Skip Button */}
+        <div className="absolute top-6 right-6 z-30">
+          <motion.button
+            type="button"
+            onClick={handleSkip}
+            className="px-4 py-2 text-xs font-semibold tracking-wider uppercase rounded-full bg-[#0B1224]/80 backdrop-blur-md border border-white/15 text-slate-300 hover:text-white hover:bg-[#121E3B] hover:border-white/30 transition-all shadow-sm cursor-pointer active:scale-95"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
+            Skip
+          </motion.button>
+        </div>
+
+        {/* Subtle Progress Bar at bottom */}
+        <div className="absolute bottom-0 inset-x-0 h-1 bg-black/5">
+          <motion.div
+            className="h-full bg-gradient-to-r from-[#1A6BFF] via-[#38BDF8] to-[#1A6BFF]"
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 5.4, ease: "linear" }}
+          />
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

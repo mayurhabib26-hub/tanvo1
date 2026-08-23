@@ -7,7 +7,7 @@ export default function ServiceCard({ service, className = "" }) {
       <a
         href="#contact"
         data-cursor="hover"
-        className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-line bg-ivory p-8 transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-charcoal/25 hover:bg-blue-soft/25 sm:p-10"
+        className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-line bg-[#0B1224]/70 p-8 transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-accent/40 hover:bg-[#101B36] hover:shadow-[0_12px_30px_rgba(26,107,255,0.12)] sm:p-10"
       >
         <div className="flex items-start justify-between">
           <span className="num-mono text-[15px] font-semibold text-accent">
@@ -16,7 +16,7 @@ export default function ServiceCard({ service, className = "" }) {
           <ArrowUpRight
             size={20}
             strokeWidth={2}
-            className="-translate-y-1 translate-x-1 text-charcoal opacity-0 transition-all duration-400 ease-out group-hover:translate-y-0 group-hover:translate-x-0 group-hover:opacity-100"
+            className="-translate-y-1 translate-x-1 text-white opacity-0 transition-all duration-400 ease-out group-hover:translate-y-0 group-hover:translate-x-0 group-hover:opacity-100"
           />
         </div>
 

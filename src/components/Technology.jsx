@@ -53,15 +53,15 @@ export default function Technology() {
               <RevealItem key={name}>
                 <div
                   data-cursor="hover"
-                  className="group flex h-full flex-col items-center justify-center gap-3 bg-ivory px-4 py-9 text-center transition-colors duration-300 hover:bg-blue-soft/25"
+                  className="group flex h-full flex-col items-center justify-center gap-3 bg-[#0B1224] px-4 py-9 text-center transition-colors duration-300 hover:bg-[#121F3D]"
                 >
                   {Icon && (
                     <Icon
                       size={26}
-                      className="text-slate transition-colors duration-300 group-hover:text-charcoal"
+                      className="text-slate transition-colors duration-300 group-hover:text-accent"
                     />
                   )}
-                  <span className="text-[12.5px] font-medium text-slate transition-colors duration-300 group-hover:text-charcoal">
+                  <span className="text-[12.5px] font-medium text-slate transition-colors duration-300 group-hover:text-white">
                     {name}
                   </span>
                 </div>

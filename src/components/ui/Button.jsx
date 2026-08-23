@@ -3,12 +3,12 @@ import Magnetic from "./Magnetic";
 
 const VARIANTS = {
   primary: {
-    light: "bg-charcoal text-ivory hover:bg-[#262C52]",
-    dark: "bg-ivory text-charcoal hover:bg-white",
+    light: "bg-steel text-white hover:bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]",
+    dark: "bg-white text-[#080D1A] hover:bg-slate-100 shadow-[0_0_20px_rgba(255,255,255,0.15)]",
   },
   secondary: {
-    light: "border border-line text-charcoal hover:border-charcoal/40 hover:bg-ivory-dim",
-    dark: "border border-white/20 text-ivory hover:border-white/40 hover:bg-white/5",
+    light: "border border-line bg-white/[0.04] text-charcoal hover:border-accent/40 hover:bg-white/[0.08]",
+    dark: "border border-white/20 bg-white/5 text-white hover:border-white/40 hover:bg-white/10",
   },
 };
 

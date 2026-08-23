@@ -1,8 +1,8 @@
 import tanvoMark from "../assets/tanvo-mark.png";
 
-export default function Logo({ variant = "dark", showLabel = true, className = "" }) {
-  const textColor = variant === "dark" ? "text-charcoal" : "text-ivory";
-  const labelColor = variant === "dark" ? "text-slate" : "text-blue-soft/70";
+export default function Logo({ showLabel = true, className = "" }) {
+  const textColor = "text-white";
+  const labelColor = "text-accent/90";
 
   return (
     <a

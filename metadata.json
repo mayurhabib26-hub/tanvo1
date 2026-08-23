@@ -1,0 +1,6 @@
+{
+  "name": "Tanvo — Digital Technology Agency",
+  "description": "Tanvo is a digital technology agency building websites, web applications, mobile apps, e-commerce experiences and digital solutions for ambitious businesses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

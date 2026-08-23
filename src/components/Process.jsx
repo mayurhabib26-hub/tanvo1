@@ -38,8 +38,8 @@ export default function Process() {
           <RevealGroup className="flex flex-col" stagger={0.1}>
             {processSteps.map((step) => (
               <RevealItem key={step.number} className="relative flex gap-6 py-7 sm:gap-8 sm:py-8">
-                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-ivory sm:h-12 sm:w-12">
-                  <span className="num-mono text-[13px] font-semibold text-charcoal">
+                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-[#0B1224] sm:h-12 sm:w-12 shadow-[0_0_15px_rgba(0,0,0,0.4)]">
+                  <span className="num-mono text-[13px] font-semibold text-accent">
                     {step.number}
                   </span>
                 </div>

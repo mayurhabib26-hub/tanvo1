@@ -15,7 +15,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-4 py-1.5"
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.05] px-4 py-1.5 backdrop-blur-sm"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-steel" />
             <span className="text-[12.5px] font-medium text-slate">
