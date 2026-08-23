@@ -1,8 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { RevealItem } from "./ui/Reveal";
-import ProjectArt from "./ProjectArt";
 
-export default function ProjectCard({ project, index, reverse = false }) {
+export default function ProjectCard({ project, reverse = false }) {
   return (
     <RevealItem>
       <a
@@ -16,9 +15,12 @@ export default function ProjectCard({ project, index, reverse = false }) {
           }`}
         >
           <div className="aspect-[16/10] overflow-hidden">
-            <div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.06]">
-              <ProjectArt index={index} id={project.number} />
-            </div>
+            <img
+              src={`https://loremflickr.com/800/500/${project.imageTags}`}
+              alt={project.title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+            />
           </div>
         </div>
 

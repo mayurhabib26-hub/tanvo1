@@ -3,7 +3,7 @@ import Magnetic from "./Magnetic";
 
 const VARIANTS = {
   primary: {
-    light: "bg-charcoal text-ivory hover:bg-[#152047]",
+    light: "bg-charcoal text-ivory hover:bg-[#262C52]",
     dark: "bg-ivory text-charcoal hover:bg-white",
   },
   secondary: {

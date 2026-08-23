@@ -48,7 +48,7 @@ export default function HeroVisual() {
         className="absolute inset-0 rounded-[32px]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #E1E8F7 1px, transparent 1px), linear-gradient(to bottom, #E1E8F7 1px, transparent 1px)",
+            "linear-gradient(to right, #FFE0E7 1px, transparent 1px), linear-gradient(to bottom, #FFE0E7 1px, transparent 1px)",
           backgroundSize: "40px 40px",
           maskImage: "radial-gradient(circle at 55% 45%, black 45%, transparent 78%)",
           WebkitMaskImage: "radial-gradient(circle at 55% 45%, black 45%, transparent 78%)",
@@ -74,8 +74,8 @@ export default function HeroVisual() {
         animate={{ rotate: 360 }}
         transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
       >
-        <circle cx="200" cy="200" r="168" stroke="#DCE8FF" strokeWidth="1" fill="none" />
-        <circle cx="200" cy="200" r="120" stroke="#DCE8FF" strokeWidth="1" fill="none" strokeDasharray="2 8" />
+        <circle cx="200" cy="200" r="168" stroke="#BDB2FF" strokeWidth="1" fill="none" />
+        <circle cx="200" cy="200" r="120" stroke="#BDB2FF" strokeWidth="1" fill="none" strokeDasharray="2 8" />
       </motion.svg>
 
       {/* real brand mark, tilts toward the cursor */}
@@ -92,7 +92,7 @@ export default function HeroVisual() {
           className="absolute inset-[-26%] rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(56,189,248,0.45) 0%, rgba(37,99,235,0.2) 55%, transparent 75%)",
+              "radial-gradient(circle, rgba(58,134,255,0.45) 0%, rgba(189,178,255,0.25) 55%, transparent 75%)",
             x: useTransform(springX, [-0.5, 0.5], [-14, 14]),
             y: useTransform(springY, [-0.5, 0.5], [-14, 14]),
           }}
@@ -110,7 +110,7 @@ export default function HeroVisual() {
           <img
             src={tanvoMark}
             alt=""
-            className="h-full w-full object-contain drop-shadow-[0_30px_60px_rgba(11,15,25,0.12)]"
+            className="h-full w-full object-contain drop-shadow-[0_30px_60px_rgba(26,31,61,0.12)]"
             style={{ transform: "translateZ(40px)" }}
           />
 

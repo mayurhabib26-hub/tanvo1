@@ -250,7 +250,7 @@ export default function IntroAnimation() {
       style={{
         perspective: 1000,
         backgroundImage:
-          "radial-gradient(circle at 50% 45%, var(--color-ivory) 0%, var(--color-ivory-dim) 100%)",
+          "radial-gradient(circle at 50% 45%, #F0F9FF 0%, #E0F2FE 100%)",
       }}
       animate={exiting ? { opacity: 0, scale: 1.06 } : { opacity: 1, scale: 1 }}
       transition={{ duration: EXIT_DURATION, ease: EASE }}
@@ -260,7 +260,7 @@ export default function IntroAnimation() {
     >
       <motion.div
         aria-hidden="true"
-        className="absolute h-[46vh] w-[46vh] rounded-full bg-accent/40 blur-3xl"
+        className="absolute h-[46vh] w-[46vh] rounded-full bg-[#1E46D6]/40 blur-3xl"
         initial={{ opacity: 0, scale: 0.7 }}
         animate={{ opacity: [0, 0.8, 0.55], scale: [0.7, 1.15, 1] }}
         transition={{ duration: 1, delay: GLOW_DELAY, ease: EASE }}
@@ -298,7 +298,7 @@ export default function IntroAnimation() {
         />
 
         <motion.span
-          className="mt-4 text-[40px] font-extrabold tracking-tight text-charcoal sm:text-[52px]"
+          className="mt-4 text-[40px] font-extrabold tracking-tight text-[#0B0F19] sm:text-[52px]"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: WORD_DURATION, delay: WORD_DELAY, ease: EASE }}
@@ -307,7 +307,7 @@ export default function IntroAnimation() {
         </motion.span>
 
         <motion.span
-          className="mt-2 text-[15px] font-medium tracking-wide text-slate sm:text-[17px]"
+          className="mt-2 text-[15px] font-medium tracking-wide text-[#55617A] sm:text-[17px]"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: TAG_DURATION, delay: TAG_DELAY, ease: EASE }}

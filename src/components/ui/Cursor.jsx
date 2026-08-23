@@ -46,7 +46,7 @@ export default function Cursor() {
         y: springY,
         translateX: "-50%",
         translateY: "-50%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#EDEBFC",
       }}
       animate={{
         width: hovering ? 42 : 8,

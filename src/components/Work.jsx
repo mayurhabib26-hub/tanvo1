@@ -27,8 +27,8 @@ export default function Work() {
         </div>
 
         <RevealGroup className="mt-4">
-          {projects.map((project, i) => (
-            <ProjectCard key={project.number} project={project} index={i} />
+          {projects.map((project) => (
+            <ProjectCard key={project.number} project={project} />
           ))}
         </RevealGroup>
       </div>

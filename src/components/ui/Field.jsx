@@ -29,7 +29,7 @@ export function SelectField({ label, name, options, required, value, onChange, c
         required={required}
         value={value}
         onChange={onChange}
-        className="mt-3 w-full appearance-none border-b border-line bg-transparent bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%2255617A%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-[length:16px] bg-[right_2px_center] bg-no-repeat pb-3 text-[15px] text-charcoal outline-none transition-colors duration-300 focus:border-charcoal"
+        className="mt-3 w-full appearance-none border-b border-line bg-transparent bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%226E6A85%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-[length:16px] bg-[right_2px_center] bg-no-repeat pb-3 text-[15px] text-charcoal outline-none transition-colors duration-300 focus:border-charcoal"
       >
         <option value="" disabled>
           Select an option
