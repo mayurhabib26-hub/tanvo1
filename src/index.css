@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-ivory: #F0F9FF;
+  --color-ivory-dim: #E0F2FE;
+  --color-charcoal: #0B0F19;
+  --color-slate: #55617A;
+  --color-steel: #2F5DFF;
+  --color-blue-soft: #DCE8FF;
+  --color-line: #E1E8F7;
+  --color-dark: #070B14;
+  --color-dark-line: #1B2440;
+  --color-dark-soft: #0E1424;
+  --color-accent: #1E46D6;
+
+  --animate-marquee: marquee 32s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+/* Ambient drift for the intro's background particle field — per-particle
+   distance/rotation come from custom properties set inline so every
+   particle can share one keyframes definition. */
+@keyframes intro-float {
+  0%, 100% { transform: translate(0, 0) rotate(var(--rot-a, 0deg)); }
+  50% { transform: translate(var(--float-x, 6px), var(--float-y, -10px)) rotate(var(--rot-b, 10deg)); }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background: var(--color-ivory);
+  }
+
+  body {
+    background: var(--color-ivory);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-steel);
+    color: var(--color-ivory);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .container-tanvo {
+    width: 100%;
+    max-width: 1360px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  @media (min-width: 768px) {
+    .container-tanvo {
+      padding-inline: 40px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container-tanvo {
+      padding-inline: 64px;
+    }
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .num-mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+}
