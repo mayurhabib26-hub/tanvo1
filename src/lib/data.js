@@ -1,3 +1,8 @@
+import ecommerceImg from "../assets/projects/ecommerce.jpg";
+import businessImg from "../assets/projects/business.jpg";
+import mobileImg from "../assets/projects/mobile.jpg";
+import saasImg from "../assets/projects/saas.jpg";
+
 export const navLinks = [
   { label: "Home", href: "#home" },
   { label: "Services", href: "#services" },
@@ -67,7 +72,7 @@ export const projects = [
     category: "E-commerce",
     description: "A modern commerce experience built for growth.",
     tech: "Next.js · Node.js · Stripe",
-    imageTags: "ecommerce,shopping",
+    image: ecommerceImg,
   },
   {
     number: "02",
@@ -75,7 +80,7 @@ export const projects = [
     category: "Website",
     description: "A premium digital presence for a growing company.",
     tech: "React · Tailwind · Sanity",
-    imageTags: "office,business",
+    image: businessImg,
   },
   {
     number: "03",
@@ -83,7 +88,7 @@ export const projects = [
     category: "Mobile App",
     description: "A clean and intuitive mobile product.",
     tech: "Flutter · Firebase",
-    imageTags: "smartphone,mobileapp",
+    image: mobileImg,
   },
   {
     number: "04",
@@ -91,7 +96,7 @@ export const projects = [
     category: "Web Application",
     description: "A scalable web application for modern businesses.",
     tech: "React · Node.js · PostgreSQL",
-    imageTags: "dashboard,software",
+    image: saasImg,
   },
 ];
 

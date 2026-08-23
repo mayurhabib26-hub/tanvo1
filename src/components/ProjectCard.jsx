@@ -16,7 +16,7 @@ export default function ProjectCard({ project, reverse = false }) {
         >
           <div className="aspect-[16/10] overflow-hidden">
             <img
-              src={`https://loremflickr.com/800/500/${project.imageTags}`}
+              src={project.image}
               alt={project.title}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
